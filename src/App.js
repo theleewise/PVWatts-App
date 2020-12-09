@@ -1,55 +1,75 @@
+/* eslint-disable no-console */
 /* eslint-disable react/jsx-filename-extension */
-/* eslint-disable jsx-a11y/label-has-associated-control */
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useFetch } from './hooks';
 import ResultsTable from './components/ResultsTable';
+import Form from './components/Form';
 
 export default function App() {
-  const url = 'https://developer.nrel.gov/api/pvwatts/v6.json?api_key=DEMO_KEY&lat=40&lon=-105&system_capacity=4&azimuth=180&tilt=40&array_type=1&module_type=1&losses=10&timeframe=hourly&format=json';
-  const { data, refetch } = useFetch(url);
-  // isLoading hasError errorMessage updateUrl updateParams
+  const url = 'https://developer.nrel.gov/api/pvwatts/v6.json?';
+  const defaultUrlParams = {
+    api_key: 'Pe94WWsLk3PoPXObJEX4yxGcfXRNiDIwxVdZwCzq',
+    timeframe: 'hourly',
+    format: 'json',
+  };
+  const {
+    data, isLoading, updateParams, hasError, errorMessage,
+  } = useFetch(url, defaultUrlParams, true);
+  const [params, setParams] = useState(defaultUrlParams);
+  const [displayResults, setDisplayResults] = useState(false);
+
+  useEffect(() => { if (errorMessage) { console.error(errorMessage.errors); } }, [errorMessage]);
+  useEffect(() => {
+    if (!hasError && data && data.outputs) { setDisplayResults(true); }
+  }, [hasError, data]);
+
+  const handleInputChange = (name, val) => {
+    const isEmpty = name.length <= 0;
+    if (isEmpty) return;
+    setDisplayResults(false);
+    setParams((prevState) => {
+      const newParams = { ...prevState };
+      newParams[name] = val;
+      return newParams;
+    });
+  };
+
+  const handleSubmit = () => updateParams(params);
+
+  const handleBack = () => setDisplayResults(false);
 
   return (
     <div className="container">
-      <div>
-        <div className="form-group">
-          <label htmlFor="systemCapacityInput">Nameplate Capacity (kW).</label>
-          <input id="systemCapacityInput" type="range" min="0.05" max="500000" step="10" className="form-control-range" />
+
+      {hasError && !isLoading && (
+        <div className="mt-4 alert alert-danger" role="alert">
+          <strong>Oh No!</strong>
+          Something went wrong.
+          {errorMessage.errors && (
+            <ul>
+              {errorMessage.errors.map((message) => <li>{message}</li>)}
+            </ul>
+          )}
         </div>
-        <div className="form-group">
-          <label htmlFor="moduleTypeInput">Module Type</label>
-          <select className="form-control" id="moduleTypeInput">
-            <option value="0">Standard</option>
-            <option value="1">Premium</option>
-            <option value="2">Thin film</option>
-          </select>
+      )}
+
+      {!displayResults && !isLoading && (
+        <Form handleSubmit={handleSubmit} handleInputChange={handleInputChange} />
+      )}
+
+      {isLoading && (
+        <div className="py-5 text-center">
+          <div className="spinner-border text-primary" role="status"><span className="sr-only">Loading...</span></div>
         </div>
-        <div className="form-group">
-          <label htmlFor="systemLossesInput">System Losses (percent)</label>
-          <input type="range" min="-5" max="99" step="1" className="form-control-range" id="lossesInput" />
+      )}
+
+      {data && displayResults && !isLoading && (
+        <div className="my-4">
+          <ResultsTable acMonthly={data.outputs.ac_monthly} poa={data.outputs.poa} />
+          <button type="button" className="btn btn-secondary" onClick={handleBack}>Back to Form</button>
         </div>
-        <div className="form-group">
-          <label htmlFor="arrayTypeInput">Array Type</label>
-          <select className="form-control" id="arrayTypeInput">
-            <option value="0">Fixed - Open Rack</option>
-            <option value="1">Fixed - Roof Mounted</option>
-            <option value="2">1-Axis</option>
-            <option value="3">1-Axis Backtracking</option>
-            <option value="4">2-Axis</option>
-          </select>
-        </div>
-        <div className="form-group">
-          <label htmlFor="titleInput">Title Angle (degrees)</label>
-          <input type="range" min="0" max="99" step="1" className="form-control-range" id="titleInput" />
-        </div>
-        <div className="form-group">
-          <label htmlFor="azimuthAngleInput">Azimuth Angle (degrees)</label>
-          <input type="range" min="0" max="99" step="1" className="form-control-range" id="azimuthAngleInput" />
-        </div>
-        <button type="submit" className="btn btn-primary" onClick={refetch}>Submit</button>
-      </div>
-      {data && <ResultsTable acMonthly={data.outputs.ac_monthly} poa={data.outputs.poa} /> }
+      )}
     </div>
   );
 }
