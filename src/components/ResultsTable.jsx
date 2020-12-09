@@ -1,7 +1,8 @@
+/* eslint-disable react/no-array-index-key */
 import React from 'react';
 import PropTypes from 'prop-types';
 
-const ResultsTable = ({ acMonthly, poa }) => {
+export default function ResultsTable({ acMonthly, poa }) {
   const monthName = (num) => {
     const names = ['Janaruy', 'Febuary', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     return names[num];
@@ -20,16 +21,16 @@ const ResultsTable = ({ acMonthly, poa }) => {
   return (
     <div>
       {acMonthly && (
-        <table className="table table-striped table-dark table-bordered">
+        <table className="table table-sm table-striped table-dark table-bordered">
           <thead>
             <tr>
               <th>Month</th>
-              <th>Monthly AC system output. (kWhac)</th>
+              <th>AC System Output (kWhac)</th>
             </tr>
           </thead>
           <tbody>
             {acMonthly.map((row, idx) => (
-              <tr>
+              <tr key={idx}>
                 <td>{monthName(idx)}</td>
                 <td>{row}</td>
               </tr>
@@ -38,18 +39,18 @@ const ResultsTable = ({ acMonthly, poa }) => {
         </table>
       )}
       {days && (
-        <table className="table table-striped table-dark table-bordered">
+        <table className="table table-responsive table-sm table-striped table-dark table-bordered">
           <thead>
             <tr>
               <th>Day</th>
-              {[...Array(24)].map((_, i) => <th>{`Hour ${i + 1}`}</th>)}
+              {[...Array(24)].map((_, i) => <th key={i}>{`Hour ${i + 1}`}</th>)}
             </tr>
           </thead>
           <tbody>
             {days.map((row, dayNum) => (
-              <tr>
+              <tr key={dayNum}>
                 <td>{`Day ${dayNum + 1}`}</td>
-                {row.map((hour) => <td>{hour > 0 && hour}</td>)}
+                {row.map((hour, i) => <td key={i}>{hour > 0 && hour}</td>)}
               </tr>
             ))}
           </tbody>
@@ -57,9 +58,7 @@ const ResultsTable = ({ acMonthly, poa }) => {
       )}
     </div>
   );
-};
-
-export default ResultsTable;
+}
 
 ResultsTable.propTypes = {
   acMonthly: PropTypes.arrayOf(PropTypes.number).isRequired,
