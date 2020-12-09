@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+/* eslint-disable import/prefer-default-export */
+import { useState, useEffect, useRef } from 'react';
 
-// eslint-disable-next-line import/prefer-default-export
 export const useFetch = (initialUrl, initialParams = {}, skip = false) => {
+  const didMountRef = useRef(false);
   const [url, updateUrl] = useState(initialUrl);
   const [params, updateParams] = useState(initialParams);
   const [data, setData] = useState(null);
@@ -9,14 +10,16 @@ export const useFetch = (initialUrl, initialParams = {}, skip = false) => {
   const [hasError, setHasError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [refetchIndex, setRefetchIndex] = useState(0);
-  const queryString = Object.keys(params).map((key) => (
-    `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`
-  )).join('&');
+  const queryString = Object.keys(params)
+    .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`).join('&');
   const refetch = () => setRefetchIndex((prevRefetchIndex) => prevRefetchIndex + 1);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (skip) return;
+      if (skip && !didMountRef.current) {
+        didMountRef.current = true;
+        return;
+      }
       setIsLoading(true);
       try {
         const response = await fetch(`${url}${queryString}`);
